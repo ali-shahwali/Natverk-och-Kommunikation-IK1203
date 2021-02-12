@@ -4,9 +4,11 @@ import java.io.*;
 
 public class TCPClient {
 
+    private static int INIT_TIMEOUT = 2000;
+
     public static String askServer(String hostname, int port, String ToServer) throws  IOException {
         Socket socket = new Socket(hostname, port);
-        socket.setSoTimeout(500);
+        socket.setSoTimeout(INIT_TIMEOUT);
         OutputStream output = socket.getOutputStream();
         InputStream input = socket.getInputStream();
 
@@ -33,7 +35,7 @@ public class TCPClient {
 
     public static String askServer(String hostname, int port) throws  IOException {
         Socket socket = new Socket(hostname, port);
-        socket.setSoTimeout(500);
+        socket.setSoTimeout(INIT_TIMEOUT);
         InputStream input = socket.getInputStream();
 
         int nextChar = input.read();
@@ -42,6 +44,8 @@ public class TCPClient {
             do {
                 data.append((char) nextChar);
                 nextChar = input.read();
+                if(data.length() < 500)
+                    break;
             } while(nextChar != -1);
         }
         catch(java.net.SocketTimeoutException e) {
