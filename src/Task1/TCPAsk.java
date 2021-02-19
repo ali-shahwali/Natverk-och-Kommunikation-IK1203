@@ -7,7 +7,6 @@ public class TCPAsk {
         String hostname = null;
         int port = 0;
         String serverInput = null;
-
         try {
             hostname = args[0];
             port = Integer.parseInt(args[1]);
