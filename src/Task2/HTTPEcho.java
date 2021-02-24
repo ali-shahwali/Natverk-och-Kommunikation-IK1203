@@ -3,65 +3,47 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.io.*;
 
-
 public class HTTPEcho {
-    private static int INIT_SIZE = 128;
+
+    private static int INIT_SIZE = 1024;
 
     public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(args[0]);
         ServerSocket serverSocket = new ServerSocket(port);
-
+        String status = "HTTP/1.1 200 OK\n\n";
+        byte[] encodedStatus = status.getBytes(StandardCharsets.UTF_8);
 
         while(true) {
             Socket toClient = serverSocket.accept();
             InputStream clientInput = toClient.getInputStream();
             OutputStream clientOutput = toClient.getOutputStream();
 
+            clientOutput.write(encodedStatus);
+
             byte[] data = new byte[INIT_SIZE];
-            byte[] ch = new byte[1];
-            int i = 0;
-            int k = clientInput.read(ch);
-            try {
-                while(k != -1) {
-                    if(i == data.length)
-                        data = resize(data);
+            while(true) {
+                int dataSize = clientInput.read(data);
 
-                    if(ch[0] == 13){
-                        data[i] = 13;
-                        i++;
-                        k = clientInput.read(ch);
-                        if(ch[0] == 10) {
-                            data[i] = 10;
-                            i++;
-                            k = clientInput.read(ch);
-                            if(ch[0] == 13) {
-                                data[i] = 13;
-                                i++;
-                                break;
-                            }
-                        }
-                    }
-                    else {
-                        data[i] = ch[0];
-                        k = clientInput.read(ch);
+                if(dataSize < INIT_SIZE) {
+                    byte[] trimData = new byte[dataSize];
+                    int i = 0;
+                    while(i < dataSize) {
+                        trimData[i] = data[i];
                         i++;
                     }
+                    clientOutput.write(trimData);
+                    toClient.close();
+                    break;
                 }
-                data = trim(data, i);
-
-                String status = "HTTP/1.1 200 OK\n\n";
-                byte[] encodedStatus = status.getBytes(StandardCharsets.UTF_8);
-                clientOutput.write(encodedStatus);
-                clientOutput.write(data);
-
-                toClient.close();
-            }
-            catch(Exception e) {
-                System.err.println("Exception occured");
+                else {
+                    clientOutput.write(data);
+                    data = new byte[INIT_SIZE];
+                }
             }
         }
     }
 
+// not used
     public static byte[] resize(byte[] arr) {
 
         byte[] resize = new byte[arr.length*2];
